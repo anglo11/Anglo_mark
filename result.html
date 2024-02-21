@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Results</title>
+  <!-- Include Firebase JavaScript SDK -->
+  <script src="https://www.gstatic.com/firebasejs/7.7.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.7.0/firebase-storage.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.7.0/firebase-firestore.js"></script>
+
+  <style>
+    /* Paste the CSS code here */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+
+    #resultsTable {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    #resultsTable th, #resultsTable td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+
+    #resultsTable th {
+      background-color: #f2f2f2;
+    }
+
+    #resultsTable tbody tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+  </style>
+</head>
+<body>
+  <h1>Student Results</h1>
+  <table id="resultsTable">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Writing</th>
+        <th>Listening</th>
+        <th>Speaking</th>
+        <th>Reading</th>
+        <th>Total</th> <!-- Add Total column -->
+      </tr>
+    </thead>
+    <tbody id="resultsBody">
+      <!-- Results will be dynamically added here -->
+    </tbody>
+  </table>
+
+  <script src="https://www.gstatic.com/firebasejs/7.7.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.7.0/firebase-storage.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.7.0/firebase-firestore.js"></script>
+
+  <script>
+    // Initialize Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyB3gGDicD_auKiVxvy4tKYGaTiDBLtholY",
+      authDomain: "anglo-8cae7.firebaseapp.com",
+      projectId: "anglo-8cae7",
+      storageBucket: "anglo-8cae7.appspot.com",
+      messagingSenderId: "653492773835",
+      appId: "1:653492773835:web:7f5809f5a16608e3374c4e"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+
+    // Function to fetch user details from USERS collection
+    const db = firebase.firestore();
+
+    // Function to fetch user details from USERS collection based on userid
+    async function fetchUserDetails(userId) {
+      console.log("entered", userId);
+
+      const userRef = db.collection('USERS').where('Userid', '==', userId);
+
+      try {
+        const userQuerySnapshot = await userRef.get();
+
+        if (!userQuerySnapshot.empty) {
+          const userDoc = userQuerySnapshot.docs[0];
+          const userData = userDoc.data();
+          console.log('User Details:', userData);
+
+          return userData;  // Return user data
+        } else {
+          console.error(`No user found with ID ${userId}`);
+          return null;
+        }
+      } catch (error) {
+        console.error('Error fetching user details:', error);
+        return null;
+      }
+    }
+
+    // Function to fetch and display results
+    async function displayResults() {
+      const resultsTable = document.getElementById('resultsBody');
+
+      try {
+        // Fetch userid from each ANSWER collection
+        const listeningSnapshot = await db.collection('ANSWERS_LISTENING').get();
+        const readingSnapshot = await db.collection('ANSWERS_READING').get();
+        const writingSnapshot = await db.collection('ANSWERS_WRITING').get();
+        const speakingSnapshot = await db.collection('ANSWER_SPEAKING').get();
+
+        const userIds = new Set(); // Store unique userids
+
+        // Add userids from ANSWER_LISTENING collection
+        listeningSnapshot.forEach(doc => {
+          userIds.add(doc.data().userid);
+        });
+
+        // Add userids from ANSWER_READING collection
+        readingSnapshot.forEach(doc => {
+          userIds.add(doc.data().userid);
+        });
+
+        // Add userids from ANSWER_WRITING collection
+        writingSnapshot.forEach(doc => {
+          userIds.add(doc.data().userid);
+        });
+
+        // Add userids from ANSWER_SPEAKING collection
+        speakingSnapshot.forEach(doc => {
+          userIds.add(doc.data().user);
+        });
+
+        console.log(userIds);
+
+        // Fetch user details for each userid and display in table
+        for (const userId of userIds) {
+          const userDetails = await fetchUserDetails(userId);
+
+          // Skip if user details not found
+          if (!userDetails) {
+            continue;
+          }
+
+          // Get scores for each category
+          const writingScore = writingSnapshot.docs.find(doc => doc.data().userid === userId)?.data().marks || '-';
+          const listeningScore = listeningSnapshot.docs.find(doc => doc.data().userid === userId)?.data().marks || '-';
+          const speakingScore = speakingSnapshot.docs.find(doc => doc.data().userid  === userId)?.data().marks || '-';
+          const readingScore = readingSnapshot.docs.find(doc => doc.data().userid === userId)?.data().marks || '-';
+
+          // Calculate total
+          const totalScore = calculateTotal([writingScore, listeningScore, speakingScore, readingScore]);
+
+          // Create table row
+          const row = `
+            <tr>
+              <td>${userDetails.Username || '-'}</td>
+              <td>${writingScore}</td>
+              <td>${listeningScore}</td>
+              <td>${speakingScore}</td>
+              <td>${readingScore}</td>
+              <td>${totalScore}</td>
+            </tr>
+          `;
+
+          // Append row to table
+          resultsTable.insertAdjacentHTML('beforeend', row);
+        }
+      } catch (error) {
+        console.error('Error fetching results:', error);
+      }
+    }
+
+    // Function to calculate total score
+    function calculateTotal(scores) {
+      // Filter out non-numeric values and calculate the average
+      const numericScores = scores.filter(score => !isNaN(score));
+      const sum = numericScores.reduce((acc, score) => acc + parseFloat(score), 0);
+      const average = sum / numericScores.length;
+
+      return isNaN(average) ? '-' : average.toFixed(2);
+    }
+
+    displayResults();
+  </script>
+</body>
+</html>
