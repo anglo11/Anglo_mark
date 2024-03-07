@@ -114,7 +114,7 @@
         const listeningSnapshot = await db.collection('ANSWERS_LISTENING').get();
         const readingSnapshot = await db.collection('ANSWERS_READING').get();
         const writingSnapshot = await db.collection('ANSWERS_WRITING').get();
-        const speakingSnapshot = await db.collection('ANSWER_SPEAKING').get();
+        const speakingSnapshot = await db.collection('SPEAKING_TEST').get();
 
         const userIds = new Set(); // Store unique userids
 
@@ -152,7 +152,7 @@
           // Get scores for each category
           const writingScore = writingSnapshot.docs.find(doc => doc.data().userid === userId)?.data().marks || '-';
           const listeningScore = listeningSnapshot.docs.find(doc => doc.data().userid === userId)?.data().marks || '-';
-          const speakingScore = speakingSnapshot.docs.find(doc => doc.data().userid  === userId)?.data().marks || '-';
+          const speakingScore = speakingSnapshot.docs.find(doc => doc.data().userid  === user)?.data().marks || '-';
           const readingScore = readingSnapshot.docs.find(doc => doc.data().userid === userId)?.data().marks || '-';
 
           // Calculate total
