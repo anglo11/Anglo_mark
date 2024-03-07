@@ -152,7 +152,7 @@
           // Get scores for each category
           const writingScore = writingSnapshot.docs.find(doc => doc.data().userid === userId)?.data().marks || '-';
           const listeningScore = listeningSnapshot.docs.find(doc => doc.data().userid === userId)?.data().marks || '-';
-          const speakingScore = speakingSnapshot.docs.find(doc => doc.data().user === userId)?.data().marks || '-';
+          const speakingScore = speakingSnapshot.docs.find(doc => doc.data().userid === userId)?.data().marks || '-';
           const readingScore = readingSnapshot.docs.find(doc => doc.data().userid === userId)?.data().marks || '-';
 
           // Calculate total
