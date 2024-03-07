@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Engineering Department Selector</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+
+  .container {
+    text-align: center;
+  }
+
+  h1 {
+    color: #000000;
+  }
+
+  select {
+    padding: 10px;
+    font-size: 16px;
+    border: 2px solid #333;
+    border-radius: 5px;
+    margin-top: 20px;
+    background-color: #fff;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url('data:image/svg+xml;utf8,<svg fill="rgba(0,0,0,0.5)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path d="M7 10l5 5 5-5z"/></svg>');
+    background-repeat: no-repeat;
+    background-position-x: calc(100% - 10px);
+    background-position-y: center;
+    background-size: 20px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Select Your Engineering Department</h1>
+  <select name="department" id="department" onchange="redirectToPage(this)">
+    <option value="" disabled selected>Select Department</option>
+    <option value="Computer Engineering">Computer Engineering</option>
+    <option value="Mechanical Engineering">Mechanical Engineering</option>
+    <option value="Civil Engineering">Civil Engineering</option>
+    <option value="Automobile Engineering">Automobile Engineering</option>
+    <option value="Electrical Engineering">Electrical Engineering</option>
+    <option value="Electronics Engineering">Electronics Engineering</option>
+  </select>
+</div>
+
+<script>
+ 
+  function redirectToPage(select) {
+    var selectedValue = select.value;
+    if (selectedValue !== "") {
+      switch (selectedValue) {
+        case "Computer Engineering":
+          window.location.href = "ctstudents.html";
+          break;
+        case "Mechanical Engineering":
+          window.location.href = "mecstudents.html";
+          break;
+        case "Civil Engineering":
+          window.location.href = "civilstudents.html";
+          break;
+        case "Automobile Engineering":
+          window.location.href = "autostudents.html";
+          break;
+        case "Electrical Engineering":
+          window.location.href = "eeestudents.html";
+          break;
+        case "Electronics Engineering":
+          window.location.href = "ecstudents.html";
+          break;
+        default:
+          break;
+      }
+    }
+  }
+</script>
+</body>
+
+</html>

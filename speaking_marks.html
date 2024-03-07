@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPEAKING MARK</title>
+    <style>
+        /* Styles for table */
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        /* Styles for submit button */
+        #submitBtn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        #submitBtn:hover {
+            background-color: #45a049;
+        }
+
+        /* Styles for delete button */
+        .deleteBtn {
+            background-color: #f44336;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .deleteBtn:hover {
+            background-color: #d32f2f;
+        }
+    </style>
+</head>
+<body>
+    <h2>SPEAKING MARK</h2>
+    <table id="answersTable">
+        <thead>
+            <tr>
+                <th>Serial_no</th>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Marks</th>
+                <th>ACTION</th>
+            </tr>
+        </thead>
+        <tbody id="answersTableBody"></tbody>
+        <tfoot>
+            <tr>
+                <td colspan="4"><button id="submitBtn">Submit</button></td>
+            </tr>
+        </tfoot>
+    </table>
+    
+
+    <script src="https://www.gstatic.com/firebasejs/7.7.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.7.0/firebase-storage.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.7.0/firebase-firestore.js"></script>
+    <script>
+          const firebaseConfig = {
+                        apiKey: "AIzaSyB3gGDicD_auKiVxvy4tKYGaTiDBLtholY",
+                        authDomain: "anglo-8cae7.firebaseapp.com",
+                        projectId: "anglo-8cae7",
+                        storageBucket: "anglo-8cae7.appspot.com",
+                        messagingSenderId: "653492773835",
+                        appId: "1:653492773835:web:7f5809f5a16608e3374c4e"
+                        };
+
+        firebase.initializeApp(firebaseConfig); 
+
+        const db = firebase.firestore();
+        const answersTableBody = document.getElementById('answersTableBody');
+        const submitBtn = document.getElementById('submitBtn');
+
+        function fetchAnswers() {
+  db.collection('SPEAKING_TEST').get().then(async (querySnapshot) => {
+    let serialNumber = 1;
+
+    for (const doc of querySnapshot.docs) {
+      const data = doc.data();
+      const id = data.user;
+      const userId = data.user;
+      const marks = data.marks || '';
+
+      // Fetch user details based on user ID
+      const userDetails = await fetchUserDetails(userId);
+
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${serialNumber}</td>
+        <td>${id}</td>
+        <td>${userDetails?.Username || '-'}</td>
+        <td><input type="text" value="${marks}" id="marks_${userId}"></td>
+        <td><button class="deleteBtn" onclick="deleteAnswer('${doc.id}')">Delete</button></td>
+      `;
+      answersTableBody.appendChild(row);
+      serialNumber++;
+    }
+  }).catch((error) => {
+    console.error('Error fetching answers:', error);
+  });
+}
+
+// Function to fetch user details from USERS collection based on userid
+async function fetchUserDetails(userId) {
+  const userRef = db.collection('USERS').where('Userid', '==', userId);
+
+  try {
+    const userQuerySnapshot = await userRef.get();
+
+    if (!userQuerySnapshot.empty) {
+      const userDoc = userQuerySnapshot.docs[0];
+      const userData = userDoc.data();
+      return userData;  // Return user data
+    } else {
+      console.error(`No user found with ID ${userId}`);
+      return null;
+    }
+  } catch (error) {
+    console.error('Error fetching user details:', error);
+    return null;
+  }
+}
+
+function updateMarks() {
+    submitBtn.disabled = true; // Disable button to prevent multiple submissions
+    const promises = [];
+    answersTableBody.querySelectorAll('tr').forEach((row) => {
+        const id = row.cells[1].textContent; // Get the user ID from the table row
+        const marksInput = document.getElementById(`marks_${id}`);
+        const marks = marksInput ? marksInput.value : ''; // Null check added here
+        // Use where clause to specify the document based on user ID
+        promises.push(db.collection('SPEAKING_TEST').where('user', '==', id).get().then((querySnapshot) => {
+        console.log(id);
+            querySnapshot.forEach((doc) => {
+                return doc.ref.update({ marks: marks });
+                
+            });
+        }));
+    });
+
+    Promise.all(promises).then(() => {
+        alert('Marks updated successfully!');
+        submitBtn.disabled = false; // Re-enable button after updating
+    }).catch((error) => {
+        console.error('Error updating marks:', error);
+        alert('Error updating marks. Please try again.');
+        submitBtn.disabled = false; // Re-enable button in case of error
+    });
+}
+
+function deleteAnswer(docId) {
+    if (confirm('Are you sure you want to delete this answer?')) {
+        db.collection('SPEAKING_TEST').doc(docId).delete().then(() => {
+            alert('Answer deleted successfully!');
+            fetchAnswers(); // Reload the table after deletion
+        }).catch((error) => {
+            console.error('Error deleting answer:', error);
+            alert('Error deleting answer. Please try again.');
+        });
+    }
+}
+
+fetchAnswers(); // Fetch answers when the page loads
+
+submitBtn.addEventListener('click', updateMarks); // Attach event listener to submit button
+</script>
+</body>
+</html>

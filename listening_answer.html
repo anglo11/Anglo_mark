@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LISTENING ANSWERS</title>
+    <style>
+        /* Styles for table */
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        /* Styles for submit button */
+        #submitBtn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        #submitBtn:hover {
+            background-color: #45a049;
+        }
+
+        /* Styles for delete button */
+        .deleteBtn {
+            background-color: #f44336;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .deleteBtn:hover {
+            background-color: #d32f2f;
+        }
+    </style>
+</head>
+<body>
+    <h2>LISTENING ANSWERS</h2>
+    <table id="answersTable">
+        <thead>
+            <tr>
+                <th>Serial_no</th>
+                <th>ID</th>
+                <th>Answer</th>
+                <th>Marks</th>
+                <th>ACTION</th>
+            </tr>
+        </thead>
+        <tbody id="answersTableBody"></tbody>
+        <tfoot>
+            <tr>
+                <td colspan="5"><button id="submitBtn">Submit</button></td>
+            </tr>
+        </tfoot>
+    </table>
+    
+
+    <script src="https://www.gstatic.com/firebasejs/7.7.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.7.0/firebase-storage.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.7.0/firebase-firestore.js"></script>
+    <script>
+       const firebaseConfig = {
+                        apiKey: "AIzaSyB3gGDicD_auKiVxvy4tKYGaTiDBLtholY",
+                        authDomain: "anglo-8cae7.firebaseapp.com",
+                        projectId: "anglo-8cae7",
+                        storageBucket: "anglo-8cae7.appspot.com",
+                        messagingSenderId: "653492773835",
+                        appId: "1:653492773835:web:7f5809f5a16608e3374c4e"
+                        };
+
+        firebase.initializeApp(firebaseConfig); 
+
+        const db = firebase.firestore();
+        const answersTableBody = document.getElementById('answersTableBody');
+        const submitBtn = document.getElementById('submitBtn');
+
+        function fetchAnswers() {
+            db.collection('ANSWERS_LISTENING').get().then((querySnapshot) => {
+                let serialNumber = 1;
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const id = data.userid;
+                    const answer = data.answerurl;
+                    const marks = data.marks || ''; // Set marks to empty string if it's not available
+
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${serialNumber}</td>
+                        <td>${id}</td>
+                        <td><a href="${answer}" target="_blank">Click for Answer</a></td>
+                        <td><input type="text" value="${marks}" id="marks_${id}"></td>
+                        <td><button class="deleteBtn" onclick="deleteAnswer('${doc.id}')">Delete</button></td>
+                    `;
+                    answersTableBody.appendChild(row);
+                    serialNumber++;
+                });
+            }).catch((error) => {
+                console.error('Error fetching answers:', error);
+            });
+        }
+
+        function updateMarks() {
+            submitBtn.disabled = true; // Disable button to prevent multiple submissions
+            const promises = [];
+            answersTableBody.querySelectorAll('tr').forEach((row) => {
+                const id = row.cells[1].textContent; // Get the user ID from the table row
+                const marksInput = document.getElementById(`marks_${id}`);
+                const marks = marksInput.value;
+                // Use where clause to specify the document based on user ID
+                promises.push(db.collection('ANSWERS_LISTENING').where('userid', '==', id).get().then((querySnapshot) => {
+                    querySnapshot.forEach((doc) => {
+                        return doc.ref.update({ marks: marks });
+                    });
+                }));
+            });
+
+            Promise.all(promises).then(() => {
+                alert('Marks updated successfully!');
+                submitBtn.disabled = false; // Re-enable button after updating
+            }).catch((error) => {
+                console.error('Error updating marks:', error);
+                alert('Error updating marks. Please try again.');
+                submitBtn.disabled = false; // Re-enable button in case of error
+            });
+        }
+
+        function deleteAnswer(docId) {
+            if (confirm('Are you sure you want to delete this answer?')) {
+                db.collection('ANSWERS_LISTENING').doc(docId).delete().then(() => {
+                    alert('Answer deleted successfully!');
+                    fetchAnswers(); // Reload the table after deletion
+                }).catch((error) => {
+                    console.error('Error deleting answer:', error);
+                    alert('Error deleting answer. Please try again.');
+                });
+            }
+        }
+
+        fetchAnswers(); // Fetch answers when the page loads
+
+        submitBtn.addEventListener('click', updateMarks); // Attach event listener to submit button
+    </script>
+</body>
+</html>

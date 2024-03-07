@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speaking Module</title>
+    <style>
+        /* Styles copied from the reading page */
+        h2 {
+            color: white;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+
+        .dashboard-container {
+            background-color: #333;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .dashboard-container h2 {
+            margin: 0;
+        }
+
+        .modules {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .modules a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+
+        .modules a:hover {
+            text-decoration: underline;
+        }
+
+        .module-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 800px;
+        }
+
+        .module-container h2 {
+            margin-top: 0;
+            font-size: 24px;
+            color: #333;
+        }table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        td button {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        td button:hover {
+            background-color: #d32f2f;
+        }
+
+        /* Additional styles specific to the speaking module */
+        /* Add your specific styles here */
+
+    </style>
+</head>
+<body>
+   <div class="dashboard-container">
+        <a href="dash.html"> <h2>Welcome to the Admin Dashboard</h2></a>
+     
+        <div class="modules">
+            <a href="listening.html">Listening</a>
+            <a href="reading.html">Reading</a>
+            <a href="writing.html">Writing</a>
+            <a href="speaking.html">Speaking</a>
+        </div>
+    </div>
+    <table id="pdfTable">
+        <thead>
+            <tr>
+                <th>Serial Number</th>
+                <th>Candiate Name</th>
+                <th>Conduct Test</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="pdfTableBody"></tbody>
+    </table>
+    <div class="module-container">
+        
+        
+    </div>
+    
+    <script src="https://www.gstatic.com/firebasejs/7.7.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.7.0/firebase-storage.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.7.0/firebase-firestore.js"></script>
+    <script>
+
+const firebaseConfig = {
+                        apiKey: "AIzaSyB3gGDicD_auKiVxvy4tKYGaTiDBLtholY",
+                        authDomain: "anglo-8cae7.firebaseapp.com",
+                        projectId: "anglo-8cae7",
+                        storageBucket: "anglo-8cae7.appspot.com",
+                        messagingSenderId: "653492773835",
+                        appId: "1:653492773835:web:7f5809f5a16608e3374c4e"
+                        };
+
+                        firebase.initializeApp(firebaseConfig);
+
+        function refreshPDFTable() {
+            console.log('====================================');
+            console.log();
+            console.log('====================================');
+            const firestoreRef = firebase.firestore().collection('SPEAKING_TEST');
+            const pdfTableBody = document.getElementById('pdfTableBody');
+            pdfTableBody.innerHTML = '';
+
+            const currentDate = new Date();
+            currentDate.setHours(0, 0, 0, 0); // Set hours, minutes, seconds, and milliseconds to 0
+             console.log('====================================');
+             console.log(currentDate);
+             console.log('====================================');
+            firestoreRef.where('createdate', '>=', currentDate).get().then((querySnapshot) => {
+                let serialNumber = 1;
+                querySnapshot.forEach((doc) => {
+                    const Data = doc.data();
+                    const whatsaap = Data.Whatsaap_number;
+                    console.log(whatsaap);
+
+                    const row = document.createElement('tr');
+                    const serialNumberCell = document.createElement('td');
+                    serialNumberCell.textContent = serialNumber++;
+                    row.appendChild(serialNumberCell);
+
+                    const pdfNameCell = document.createElement('td');
+                    pdfNameCell.textContent = whatsaap;
+                    row.appendChild(pdfNameCell);
+
+                    const conductTestCell = document.createElement('td');
+                    const conductTestButton = document.createElement('button');
+                    conductTestButton.textContent = 'Conduct Test';
+                    conductTestButton.addEventListener('click', () => {
+                        handleVideoCall(whatsaap);
+                    });
+                    conductTestCell.appendChild(conductTestButton);
+                    row.appendChild(conductTestCell);
+
+                    pdfTableBody.appendChild(row);
+                });
+            }).catch((error) => {
+                console.error('Error getting documents:', error);
+            });
+        }
+
+        function handleVideoCall(whatsaap) {
+            var url = 'https://wa.me/' + whatsaap + '?action=video';
+            window.open(url, '_blank');
+        }
+
+        refreshPDFTable();
+    </script>
+</body>
+</html>

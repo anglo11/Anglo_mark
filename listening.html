@@ -1,0 +1,534 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listening Module</title>
+    <style>
+        h2 {
+            color: white;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+
+        .dashboard-container {
+            background-color: #333;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .dashboard-container h2 {
+            margin: 0;
+        }
+
+        .modules {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .modules a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+
+        .modules a:hover {
+            text-decoration: underline;
+        }
+
+        .module-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 800px;
+        }
+
+        .module-container h2 {
+            margin-top: 0;
+            font-size: 24px;
+            color: #333;
+        }
+
+        .upload {
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        td button {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        td button:hover {
+            background-color: #d32f2f;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <a href="dash.html"><h2>Welcome to the Admin Dashboard</h2></a>
+        <div class="modules">
+            <a href="listening.html">Listening</a>
+            <a href="reading.html">Reading</a>
+            <a href="writing.html">Writing</a>
+            <a href="speaking.html">Speaking</a>
+        </div>
+    </div>
+    <div class="module-container">
+        <h2>Listening Module</h2>
+        <div class="upload">
+            <label for="audio">Add Audio:</label>
+            <input type="file" id="audio" accept="audio/*">
+            <button id="uploadAudio" onclick="uploadAudio()">Upload Audio</button>
+        </div>
+        <div class="upload">
+            <label for="pdf">Add Question PDF:</label>
+            <input type="file" id="pdf" accept=".pdf" required>
+            <button id="uploadPDF" onclick="uploadPDF()">Upload PDF</button>
+        </div>
+        <h2>Listening Practice</h2>
+        <div class="upload">
+            <label for="practiceAudio">Add Practice Audio:</label>
+            <input type="file" id="practiceAudio" accept="audio/*">
+            <button id="uploadPracticeAudio" onclick="uploadPracticeAudio()">Upload Practice Audio</button>
+        </div>
+        <div class="upload">
+            <label for="practicePdf">Add Practice PDF:</label>
+            <input type="file" id="practicePdf" accept=".pdf" required>
+            <button id="uploadPracticePDF" onclick="uploadPracticePDF()">Upload Practice PDF</button>
+        </div>
+        <table id="audioTable">
+            <thead>
+                <tr>
+                    <th>Serial Number</th>
+                    <th>Audio Name</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody id="audioTableBody"></tbody>
+        </table>
+        <table id="pdfTable">
+            <thead>
+                <tr>
+                    <th>Serial Number</th>
+                    <th>PDF Name</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody id="pdfTableBody"></tbody>
+        </table>
+        <table id="practiceAudioTable">
+            <thead>
+                <tr>
+                    <th>Serial Number</th>
+                    <th>Practice Audio Name</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody id="practiceAudioTableBody"></tbody>
+        </table>
+        <table id="practicePdfTable">
+            <thead>
+                <tr>
+                    <th>Serial Number</th>
+                    <th>Practice PDF Name</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody id="practicePdfTableBody"></tbody>
+        </table>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/7.7.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.7.0/firebase-storage.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.7.0/firebase-firestore.js"></script>
+    <script>
+       const firebaseConfig = {
+                        apiKey: "AIzaSyB3gGDicD_auKiVxvy4tKYGaTiDBLtholY",
+                        authDomain: "anglo-8cae7.firebaseapp.com",
+                        projectId: "anglo-8cae7",
+                        storageBucket: "anglo-8cae7.appspot.com",
+                        messagingSenderId: "653492773835",
+                        appId: "1:653492773835:web:7f5809f5a16608e3374c4e"
+                        };
+        firebase.initializeApp(firebaseConfig);
+
+        function uploadAudio() {
+            const storageRef = firebase.storage().ref();
+            const folderRef = storageRef.child('Listening/');
+            const audioFile = document.querySelector('#audio').files[0];
+            const audioName = audioFile.name; // Fetching the file name
+            const audioMetadata = {
+                contentType: audioFile.type
+            };
+
+            const audioTask = folderRef.child(audioName).put(audioFile, audioMetadata);
+
+            audioTask.then(snapshot => snapshot.ref.getDownloadURL())
+                .then(url => {
+                    console.log(url);
+                    alert("Audio uploaded successfully!");
+                    const firestoreRef = firebase.firestore().collection('LISTENING_TEST_AUDIO');
+                    return firestoreRef.add({
+                        audioUrl: url,
+                        audioName: audioName ,
+                        timestampField: firebase.firestore.FieldValue.serverTimestamp()// Saving the file name in Firestore
+                    });
+                })
+                .then(() => {
+                    console.log("Audio added to Firestore");
+                    refreshAudioTable(); // Refresh the table after upload
+                })
+                .catch(error => {
+                    console.error("Error uploading audio", error);
+                });
+        }
+
+
+        function uploadPDF() {
+            const storageRef = firebase.storage().ref();
+            const folderRef = storageRef.child('Listening/');
+            const pdfFile = document.querySelector('#pdf').files[0];
+            const pdfName = pdfFile.name; // Fetching the file name
+            const pdfMetadata = {
+                contentType: pdfFile.type
+            };
+
+            const pdfTask = folderRef.child(pdfName).put(pdfFile, pdfMetadata);
+
+            pdfTask.then(snapshot => snapshot.ref.getDownloadURL())
+                .then(url => {
+                    console.log(url);
+                    alert("PDF uploaded successfully!");
+                    const firestoreRef = firebase.firestore().collection('LISTENING_TEST_PDF');
+                    return firestoreRef.add({
+                        pdfUrl: url,
+                        pdfName: pdfName ,// Saving the file name in Firestore
+                        timestampField: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                })
+                .then(() => {
+                    console.log("PDF added to Firestore");
+                    refreshPDFTable(); // Refresh the table after upload
+                })
+                .catch(error => {
+                    console.error("Error uploading PDF", error);
+                });
+        }
+
+        function refreshAudioTable() {
+            const firestoreRef = firebase.firestore().collection('LISTENING_TEST_AUDIO');
+            const audioTableBody = document.getElementById('audioTableBody');
+            audioTableBody.innerHTML = '';
+
+            firestoreRef.get().then((querySnapshot) => {
+                let serialNumber = 1;
+                querySnapshot.forEach((doc) => {
+                    const audioData = doc.data();
+                    const audioName = audioData.audioName; // Fetching the file name from Firestore
+
+                    const row = document.createElement('tr');
+                    const serialNumberCell = document.createElement('td');
+                    serialNumberCell.textContent = serialNumber++;
+                    row.appendChild(serialNumberCell);
+
+                    const audioNameCell = document.createElement('td');
+                    audioNameCell.textContent = audioName; // Displaying the file name
+                    row.appendChild(audioNameCell);
+
+                    const deleteCell = document.createElement('td');
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'Delete';
+                    deleteButton.addEventListener('click', () => {
+                        deleteAudio(doc.id, audioName);
+                    });
+                    deleteCell.appendChild(deleteButton);
+                    row.appendChild(deleteCell);
+
+                    audioTableBody.appendChild(row);
+                });
+            }).catch((error) => {
+                console.error('Error getting audio documents:', error);
+            });
+        }
+
+        function refreshPDFTable() {
+            const firestoreRef = firebase.firestore().collection('LISTENING_TEST_PDF');
+            const pdfTableBody = document.getElementById('pdfTableBody');
+            pdfTableBody.innerHTML = '';
+
+            firestoreRef.get().then((querySnapshot) => {
+                let serialNumber = 1;
+                querySnapshot.forEach((doc) => {
+                    const pdfData = doc.data();
+                    const pdfName = pdfData.pdfName; // Fetching the file name from Firestore
+
+                    const row = document.createElement('tr');
+                    const serialNumberCell = document.createElement('td');
+                    serialNumberCell.textContent = serialNumber++;
+                    row.appendChild(serialNumberCell);
+
+                    const pdfNameCell = document.createElement('td');
+                    pdfNameCell.textContent = pdfName; // Displaying the file name
+                    row.appendChild(pdfNameCell);
+
+                    const deleteCell = document.createElement('td');
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'Delete';
+                    deleteButton.addEventListener('click', () => {
+                        deletePDF(doc.id, pdfName);
+                    });
+                    deleteCell.appendChild(deleteButton);
+                    row.appendChild(deleteCell);
+
+                    pdfTableBody.appendChild(row);
+                });
+            }).catch((error) => {
+                console.error('Error getting PDF documents:', error);
+            });
+        }
+
+        function deleteAudio(audioId, audioName) {
+            const storageRef = firebase.storage().ref();
+            const audioRef = storageRef.child('Listening/' + audioName);
+
+            const firestoreRef = firebase.firestore().collection('LISTENING_TEST_AUDIO').doc(audioId);
+            firestoreRef.delete().then(() => {
+                console.log('Audio deleted from Firestore successfully');
+            }).catch((error) => {
+                console.error('Error deleting Audio from Firestore:', error);
+            });
+
+            audioRef.delete().then(() => {
+                console.log('Audio deleted from Firebase Storage successfully');
+                refreshAudioTable();
+            }).catch((error) => {
+                console.error('Error deleting Audio from Firebase Storage:', error);
+            });
+        }
+
+        function deletePDF(pdfId, pdfName) {
+            const storageRef = firebase.storage().ref();
+            const pdfRef = storageRef.child('Listening/' + pdfName);
+
+            const firestoreRef = firebase.firestore().collection('LISTENING_TEST_PDF').doc(pdfId);
+            firestoreRef.delete().then(() => {
+                console.log('PDF deleted from Firestore successfully');
+            }).catch((error) => {
+                console.error('Error deleting PDF from Firestore:', error);
+            });
+
+            pdfRef.delete().then(() => {
+                console.log('PDF deleted from Firebase Storage successfully');
+                refreshPDFTable();
+            }).catch((error) => {
+                console.error('Error deleting PDF from Firebase Storage:', error);
+            });
+        }
+
+        function uploadPracticeAudio() {
+            const storageRef = firebase.storage().ref();
+            const folderRef = storageRef.child('Listeningpractice/');
+            const audioFile = document.querySelector('#practiceAudio').files[0];
+            const audioName = audioFile.name; // Fetching the file name
+            const audioMetadata = {
+                contentType: audioFile.type
+            };
+
+            const audioTask = folderRef.child(audioName).put(audioFile, audioMetadata);
+
+            audioTask.then(snapshot => snapshot.ref.getDownloadURL())
+                .then(url => {
+                    console.log(url);
+                    alert("Practice Audio uploaded successfully!");
+                    const firestoreRef = firebase.firestore().collection('LISTENPRACTICEAUDIO');
+                    return firestoreRef.add({
+                        audioUrl: url,
+                        audioName: audioName // Saving the file name in Firestore
+                    });
+                })
+                .then(() => {
+                    console.log("Practice Audio added to Firestore");
+                    refreshPracticeAudioTable(); // Refresh the table after upload
+                })
+                .catch(error => {
+                    console.error("Error uploading Practice Audio", error);
+                });
+        }
+
+        function uploadPracticePDF() {
+            const storageRef = firebase.storage().ref();
+            const folderRef = storageRef.child('Listeningpractice/');
+            const pdfFile = document.querySelector('#practicePdf').files[0];
+            const pdfName = pdfFile.name; // Fetching the file name
+            const pdfMetadata = {
+                contentType: pdfFile.type
+            };
+
+            const pdfTask = folderRef.child(pdfName).put(pdfFile, pdfMetadata);
+
+            pdfTask.then(snapshot => snapshot.ref.getDownloadURL())
+                .then(url => {
+                    console.log(url);
+                    alert("Practice PDF uploaded successfully!");
+                    const firestoreRef = firebase.firestore().collection('LISTENPRACTICEPDF');
+                    return firestoreRef.add({
+                        pdfUrl: url,
+                        pdfName: pdfName // Saving the file name in Firestore
+                    });
+                })
+                .then(() => {
+                    console.log("Practice PDF added to Firestore");
+                    refreshPracticePDFTable(); // Refresh the table after upload
+                })
+                .catch(error => {
+                    console.error("Error uploading Practice PDF", error);
+                });
+        }
+
+        function refreshPracticeAudioTable() {
+            const firestoreRef = firebase.firestore().collection('LISTENPRACTICEAUDIO');
+            const practiceAudioTableBody = document.getElementById('practiceAudioTableBody');
+            practiceAudioTableBody.innerHTML = '';
+
+            firestoreRef.get().then((querySnapshot) => {
+                let serialNumber = 1;
+                querySnapshot.forEach((doc) => {
+                    const audioData = doc.data();
+                    const audioName = audioData.audioName; // Fetching the file name from Firestore
+
+                    const row = document.createElement('tr');
+                    const serialNumberCell = document.createElement('td');
+                    serialNumberCell.textContent = serialNumber++;
+                    row.appendChild(serialNumberCell);
+
+                    const audioNameCell = document.createElement('td');
+                    audioNameCell.textContent = audioName; // Displaying the file name
+                    row.appendChild(audioNameCell);
+
+                    const deleteCell = document.createElement('td');
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'Delete';
+                    deleteButton.addEventListener('click', () => {
+                        deletePracticeAudio(doc.id, audioName);
+                    });
+                    deleteCell.appendChild(deleteButton);
+                    row.appendChild(deleteCell);
+
+                    practiceAudioTableBody.appendChild(row);
+                });
+            }).catch((error) => {
+                console.error('Error getting practice audio documents:', error);
+            });
+        }
+
+        function refreshPracticePDFTable() {
+            const firestoreRef = firebase.firestore().collection('LISTENPRACTICEPDF');
+            const practicePdfTableBody = document.getElementById('practicePdfTableBody');
+            practicePdfTableBody.innerHTML = '';
+
+            firestoreRef.get().then((querySnapshot) => {
+                let serialNumber = 1;
+                querySnapshot.forEach((doc) => {
+                    const pdfData = doc.data();
+                    const pdfName = pdfData.pdfName; // Fetching the file name from Firestore
+
+                    const row = document.createElement('tr');
+                    const serialNumberCell = document.createElement('td');
+                    serialNumberCell.textContent = serialNumber++;
+                    row.appendChild(serialNumberCell);
+
+                    const pdfNameCell = document.createElement('td');
+                    pdfNameCell.textContent = pdfName; // Displaying the file name
+                    row.appendChild(pdfNameCell);
+
+                    const deleteCell = document.createElement('td');
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'Delete';
+                    deleteButton.addEventListener('click', () => {
+                        deletePracticePDF(doc.id, pdfName);
+                    });
+                    deleteCell.appendChild(deleteButton);
+                    row.appendChild(deleteCell);
+
+                    practicePdfTableBody.appendChild(row);
+                });
+            }).catch((error) => {
+                console.error('Error getting practice PDF documents:', error);
+            });
+        }
+
+        function deletePracticeAudio(audioId, audioName) {
+            const storageRef = firebase.storage().ref();
+            const audioRef = storageRef.child('Listeningpractice/' + audioName);
+
+            const firestoreRef = firebase.firestore().collection('LISTENPRACTICEAUDIO').doc(audioId);
+            firestoreRef.delete().then(() => {
+                console.log('Practice Audio deleted from Firestore successfully');
+            }).catch((error) => {
+                console.error('Error deleting Practice Audio from Firestore:', error);
+            });
+
+            audioRef.delete().then(() => {
+                console.log('Practice Audio deleted from Firebase Storage successfully');
+                refreshPracticeAudioTable();
+            }).catch((error) => {
+                console.error('Error deleting Practice Audio from Firebase Storage:', error);
+            });
+        }
+
+        function deletePracticePDF(pdfId, pdfName) {
+            const storageRef = firebase.storage().ref();
+            const pdfRef = storageRef.child('Listeningpractice/' + pdfName);
+
+            const firestoreRef = firebase.firestore().collection('LISTENPRACTICEPDF').doc(pdfId);
+            firestoreRef.delete().then(() => {
+                console.log('Practice PDF deleted from Firestore successfully');
+            }).catch((error) => {
+                console.error('Error deleting Practice PDF from Firestore:', error);
+            });
+
+            pdfRef.delete().then(() => {
+                console.log('Practice PDF deleted from Firebase Storage successfully');
+                refreshPracticePDFTable();
+            }).catch((error) => {
+                console.error('Error deleting Practice PDF from Firebase Storage:', error);
+            });
+        }
+
+        
+        refreshAudioTable(); // Initial table population
+        refreshPDFTable(); // Initial table population
+        refreshPracticeAudioTable(); // Initial table population
+        refreshPracticePDFTable(); // Initial table population
+    </script>
+</body>
+</html>

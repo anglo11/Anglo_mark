@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Electrical and Electronics Engineering Department</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+  }
+
+  .container {
+    max-width: 800px;
+    margin: 20px auto;
+    background-color: #fff;
+    border-radius: 5px;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+
+  h1 {
+    color: #333;
+    text-align: center;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+  }
+
+  th, td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+  }
+
+  th {
+    background-color: #f2f2f2;
+  }
+
+  td button {
+    padding: 5px 10px;
+    border: none;
+    cursor: pointer;
+    border-radius: 3px;
+  }
+
+  .accept-btn {
+    background-color: #4CAF50;
+    color: white;
+  }
+
+  .delete-btn {
+    background-color: #f44336;
+    color: white;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Electrical and Electronics Engineering Department</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Serial No</th>
+        <th>Username</th>
+        <th>Department</th>
+        <th>Accept</th>
+        <th>Delete</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody">
+    
+      <!-- Add more rows as needed -->
+    </tbody>
+  </table>
+</div>
+<script src="https://www.gstatic.com/firebasejs/7.7.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/7.7.0/firebase-storage.js"></script>
+<script src="https://www.gstatic.com/firebasejs/7.7.0/firebase-firestore.js"></script>
+<script>
+    // Firebase configuration
+    const firebaseConfig = {
+                      apiKey: "AIzaSyB3gGDicD_auKiVxvy4tKYGaTiDBLtholY",
+                      authDomain: "anglo-8cae7.firebaseapp.com",
+                      projectId: "anglo-8cae7",
+                      storageBucket: "anglo-8cae7.appspot.com",
+                      messagingSenderId: "653492773835",
+                      appId: "1:653492773835:web:7f5809f5a16608e3374c4e"
+                    }
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Function to fetch data by department
+    function fetchDataByDepartment(department) {
+    const tableBody = document.querySelector('#tableBody');
+    // Clear existing table rows
+    tableBody.innerHTML = '';
+
+    // Query Firestore for documents with the specified department
+    db.collection('USERS').where('Branch', '==', 'EEE').get()
+    .then(querySnapshot => {
+        console.log("Entered");
+        if (querySnapshot.empty) {
+            console.log("No documents found");
+        } else {
+            let serialNumber = 1;
+            querySnapshot.forEach(doc => {
+                console.log("Entered1");
+                const data = doc.data();
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${serialNumber++}</td>
+                    <td>${data.Username}</td>
+                    <td>${data.Branch}</td>
+                    <td><button class="accept-btn">Accept</button></td>
+                    <td><button class="delete-btn" onclick="deleteUser('${doc.id}')">Delete</button></td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching documents: ', error);
+    });
+  
+}
+
+
+    // Function to delete user from Firestore database
+    function deleteUser(userId) {
+        db.collection('USERS').doc(userId).delete()
+            .then(() => {
+                console.log('User successfully deleted');
+                // Re-fetch data after deletion
+                const department = 'Electrical Engineering'; // Change this to the department name for this page
+                fetchDataByDepartment(department);
+            })
+            .catch(error => {
+                console.error('Error deleting user: ', error);
+            });
+    }
+
+    // Call fetchDataByDepartment() when the page loads
+    window.onload = function() {
+        const department = 'Electrical Engineering'; // Change this to the department name for this page
+        fetchDataByDepartment(department);
+    };
+</script>
+</body>
+</html>

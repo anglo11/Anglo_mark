@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writing Module</title>
+    <style>
+        /* Styles copied from the reading page */
+        h2 {
+            color: white;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+
+        .dashboard-container {
+            background-color: #333;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .dashboard-container h2 {
+            margin: 0;
+        }
+
+        .modules {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .modules a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+
+        .modules a:hover {
+            text-decoration: underline;
+        }
+
+        .module-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 800px;
+        }
+
+        .module-container h2 {
+            margin-top: 0;
+            font-size: 24px;
+            color: #333;
+        }
+
+        .upload {
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        td button {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        td button:hover {
+            background-color: #d32f2f;
+        }
+    </style>
+</head>
+<body>
+   <div class="dashboard-container">
+        <a href="dash.html"> <h2>Welcome to the Admin Dashboard</h2></a>
+     
+        <div class="modules">
+            <a href="listening.html">Listening</a>
+            <a href="reading.html">Reading</a>
+            <a href="writing.html">Writing</a>
+            <a href="speaking.html">Speaking</a>
+        </div>
+    </div>
+    <div class="module-container">
+        <h2>Writing Module</h2>
+        <div class="form-container">
+            <div class="upload">
+                <label for="pdf">Insert Question:</label>
+                <input type="file" id="pdf" accept=".pdf" required>
+                <button id="UploadPDF" onclick="UploadPDF()">Add Question</button>
+            </div>
+        </div>
+        <!-- Table to display uploaded PDFs -->
+        <table id="pdfTable">
+            <thead>
+                <tr>
+                    <th>Serial Number</th>
+                    <th>PDF Name</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody id="pdfTableBody"></tbody>
+        </table>
+        <h2>Writing Practice</h2>
+        <div class="upload">
+            <label for="practicePdf">Insert Writing Practice Question:</label>
+            <input type="file" id="practicePdf" accept=".pdf" required>
+            <button id="UploadPracticePDF" onclick="UploadPracticePDF()">Add Practice Question</button>
+        </div>
+        <table id="practicePdfTable">
+            <thead>
+                <tr>
+                    <th>Serial Number</th>
+                    <th>PDF Name</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody id="practicePdfTableBody"></tbody>
+        </table>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/7.7.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.7.0/firebase-storage.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.7.0/firebase-firestore.js"></script>
+    <script>
+          const firebaseConfig = {
+                        apiKey: "AIzaSyB3gGDicD_auKiVxvy4tKYGaTiDBLtholY",
+                        authDomain: "anglo-8cae7.firebaseapp.com",
+                        projectId: "anglo-8cae7",
+                        storageBucket: "anglo-8cae7.appspot.com",
+                        messagingSenderId: "653492773835",
+                        appId: "1:653492773835:web:7f5809f5a16608e3374c4e"
+                        };
+
+        firebase.initializeApp(firebaseConfig); 
+
+        function UploadPDF() {
+            const storageRef = firebase.storage().ref();
+            const folderRef = storageRef.child('Writing');
+            const pdfFile = document.querySelector('#pdf').files[0];
+            const pdfName = pdfFile.name; // Use the name of the uploaded PDF
+            const pdfMetadata = {
+                contentType: pdfFile.type
+            };
+
+            const pdfTask = folderRef.child(pdfName).put(pdfFile, pdfMetadata)
+                .then(snapshot => snapshot.ref.getDownloadURL())
+                .then(url => {
+                    console.log(url);
+                    alert("PDF uploaded successfully");
+                    const firestoreRef = firebase.firestore().collection('WRITING_TEST');
+                    return firestoreRef.add({
+                        pdfUrl: url,
+                        pdfName: pdfName,
+                        timestampField: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                })
+                .then(() => {
+                    console.log("PDF added to Firestore");
+                    refreshPDFTable();
+                })
+                .catch(error => {
+                    console.error("Error uploading PDF", error);
+                });
+        }
+
+        function refreshPDFTable() {
+            const firestoreRef = firebase.firestore().collection('WRITING_TEST');
+            const pdfTableBody = document.getElementById('pdfTableBody');
+            pdfTableBody.innerHTML = '';
+
+            firestoreRef.get().then((querySnapshot) => {
+                let serialNumber = 1;
+                querySnapshot.forEach((doc) => {
+                    const pdfData = doc.data();
+                    const pdfName = pdfData.pdfName;
+
+                    const row = document.createElement('tr');
+                    const serialNumberCell = document.createElement('td');
+                    serialNumberCell.textContent = serialNumber++;
+                    row.appendChild(serialNumberCell);
+
+                    const pdfNameCell = document.createElement('td');
+                    pdfNameCell.textContent = pdfName;
+                    row.appendChild(pdfNameCell);
+
+                    const deleteCell = document.createElement('td');
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'Delete';
+                    deleteButton.addEventListener('click', () => {
+                        deletePDF(doc.id, pdfName);
+                    });
+                    deleteCell.appendChild(deleteButton);
+                    row.appendChild(deleteCell);
+
+                    pdfTableBody.appendChild(row);
+                });
+            }).catch((error) => {
+                console.error('Error getting PDF documents:', error);
+            });
+        }
+
+        function deletePDF(pdfId, pdfName) {
+            const storageRef = firebase.storage().ref();
+            const pdfRef = storageRef.child('Writing/' + pdfName);
+
+            const firestoreRef = firebase.firestore().collection('WRITING_TEST').doc(pdfId);
+            firestoreRef.delete().then(() => {
+                console.log('PDF deleted from Firestore successfully');
+            }).catch((error) => {
+                console.error('Error deleting PDF from Firestore:', error);
+            });
+
+            pdfRef.delete().then(() => {
+                console.log('PDF deleted from Firebase Storage successfully');
+                refreshPDFTable();
+            }).catch((error) => {
+                console.error('Error deleting PDF from Firebase Storage:', error);
+            });
+        }
+        function UploadPracticePDF() {
+            const storageRef = firebase.storage().ref();
+            const folderRef = storageRef.child('Writingpractice');
+            const pdfFile = document.querySelector('#practicePdf').files[0];
+            
+            if (!pdfFile) {
+                console.error("No file selected.");
+                return;
+            }
+            
+            const pdfName = pdfFile.name;
+            const pdfMetadata = {
+                contentType: pdfFile.type
+            };
+
+            const pdfTask = folderRef.child(pdfName).put(pdfFile, pdfMetadata)
+                .then(snapshot => snapshot.ref.getDownloadURL())
+                .then(url => {
+                    console.log(url);
+                    alert("PDF uploaded successfully!");
+                    const firestoreRef = firebase.firestore().collection('WRITINGPRACTICEPDF');
+                    return firestoreRef.add({
+                        pdfUrl: url,
+                        pdfName: pdfName
+                    });
+                })
+                .then(() => {
+                    console.log("PDF added to Firestore");
+                    refreshPracticePDFTable();
+                })
+                .catch(error => {
+                    console.error("Error uploading PDF", error);
+                });
+        }
+
+        function refreshPracticePDFTable() {
+            const firestoreRef = firebase.firestore().collection('WRITINGPRACTICEPDF');
+            const pdfTableBody = document.getElementById('practicePdfTableBody');
+            pdfTableBody.innerHTML = '';
+
+            firestoreRef.get().then((querySnapshot) => {
+                let serialNumber = 1;
+                querySnapshot.forEach((doc) => {
+                    const pdfData = doc.data();
+                    const pdfName = pdfData.pdfName;
+
+                    const row = document.createElement('tr');
+                    const serialNumberCell = document.createElement('td');
+                    serialNumberCell.textContent = serialNumber++;
+                    row.appendChild(serialNumberCell);
+
+                    const pdfNameCell = document.createElement('td');
+                    pdfNameCell.textContent = pdfName;
+                    row.appendChild(pdfNameCell);
+
+                    const deleteCell = document.createElement('td');
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'Delete';
+                    deleteButton.addEventListener('click', () => {
+                        deletePracticePDF(doc.id, pdfName);
+                    });
+                    deleteCell.appendChild(deleteButton);
+                    row.appendChild(deleteCell);
+
+                    pdfTableBody.appendChild(row);
+                });
+            }).catch((error) => {
+                console.error('Error getting PDF documents:', error);
+            });
+        }
+
+        function deletePracticePDF(pdfId, pdfName) {
+            const storageRef = firebase.storage().ref();
+            const pdfRef = storageRef.child('Writingpractice/' + pdfName);
+
+            const firestoreRef = firebase.firestore().collection('WRITINGPRACTICEPDF').doc(pdfId);
+            firestoreRef.delete().then(() => {
+                console.log('PDF deleted from Firestore successfully');
+            }).catch((error) => {
+                console.error('Error deleting PDF from Firestore:', error);
+            });
+
+            pdfRef.delete().then(() => {
+                console.log('PDF deleted from Firebase Storage successfully');
+                refreshPracticePDFTable();
+            }).catch((error) => {
+                console.error('Error deleting PDF from Firebase Storage:', error);
+            });
+        }
+        refreshPDFTable(); 
+        refreshPracticePDFTable();// Initial table population
+    </script>
+</body>
+</html>

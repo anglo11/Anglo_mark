@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feedback Table</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #fff; /* white background */
+        color: #000; /* black text */
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+    table, th, td {
+        border: 1px solid #000; /* black border */
+    }
+    th, td {
+        padding: 10px;
+        text-align: left;
+    }
+    th {
+        background-color: #000; /* black header */
+        color: #fff; /* white text */
+    }
+    tr:nth-child(even) {
+        background-color: #f2f2f2; /* light gray background */
+    }
+</style>
+</head>
+<body>
+    <table>
+        <thead>
+            <tr>
+                <th>Serial No.</th>
+                <th>Name</th>
+                <th>Feedback</th>
+            </tr>
+        </thead>
+        <tbody id="feedbackTableBody">
+            <!-- Table body content will be populated by JavaScript -->
+        </tbody>
+    </table>
+
+    <!-- Firebase SDK and your JavaScript code to fetch data -->
+    <script src="https://www.gstatic.com/firebasejs/7.7.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.7.0/firebase-storage.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.7.0/firebase-firestore.js"></script>
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+                        apiKey: "AIzaSyB3gGDicD_auKiVxvy4tKYGaTiDBLtholY",
+                        authDomain: "anglo-8cae7.firebaseapp.com",
+                        projectId: "anglo-8cae7",
+                        storageBucket: "anglo-8cae7.appspot.com",
+                        messagingSenderId: "653492773835",
+                        appId: "1:653492773835:web:7f5809f5a16608e3374c4e"
+                        };
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+
+        // Get a reference to the Firestore service
+        const db = firebase.firestore();
+
+        // Function to fetch data from Firebase collections and populate the table
+        async function populateFeedbackTable() {
+            const feedbackTableBody = document.getElementById('feedbackTableBody');
+
+            // Clear existing table rows
+            feedbackTableBody.innerHTML = '';
+
+            // Fetch data from Firebase collection 'FEEDBACK'
+            const querySnapshot = await db.collection('FEEDBACK').get();
+
+            let serialNo = 1;
+            for (const docRef of querySnapshot.docs) {
+                // Fetch data from each document
+                const feedbackData = docRef.data();
+                const userId = feedbackData.user;
+                const feedback =feedbackData.Feed
+                console.log(feedbackData.Feed);
+
+                // Ensure userId is valid
+                if (userId) {
+                    // Fetch user name from 'USERS' collection
+                    // db.collection('USERS').doc(userId).get().then(userDoc => {
+                    //     const userName = userDoc.data().Username;
+                    //         console.log(userName);
+                    //     // Feedback content
+                    //     const feedback = feedbackData.Feed;
+
+                        // Create a new table row
+                        const newRow = document.createElement('tr');
+
+                        // Populate table cells with data
+                        newRow.innerHTML = `
+                            <td>${serialNo}</td>
+                            <td>ksdfmld</td>
+                            <td>${feedback}</td>
+                        `;
+
+                        // Append the new row to the table body
+                        feedbackTableBody.appendChild(newRow);
+
+                        // Increment serial number
+                        serialNo++;
+                    // });
+                }
+            }
+        }
+
+        // Call the function to populate the table on page load
+        populateFeedbackTable();
+    </script>
+</body>
+</html>
